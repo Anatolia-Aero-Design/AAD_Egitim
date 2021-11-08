@@ -200,15 +200,28 @@ while True:
 #3.
 1000 int den oluşan random bir liste yaratın ve istediğiniz sorting algoritmasını kullanarak küçükten büyüğe sıralayan bir script yazınız.
 """
+
+liste_random = []
+
+for r in range(1000):
+    liste_random.append(random.randint(-5000,5000)) 
+
 liste_random = []
 liste_sirali = []
 
 for r in range(1000):
     liste_random.append(random.randint(-5000,5000)) 
 
-liste_sirali= sorted(liste_random) #sorting algoritmasını biz yazcaz sandım bende :D
+for iter in range(len(liste_random)-1,0,-1):
+    for index in range(iter):
+         if liste_random[index]>liste_random[index+1]:
+             gecici = liste_random[index]
+             liste_random[index] = liste_random[index+1]
+             liste_random[index+1] = gecici
 
-print(liste_sirali) 
+#liste_sirali= sorted(liste_random)
+
+print(liste_random) 
 
 
 """
@@ -233,8 +246,6 @@ print("Bu kadar deneme hakkı ile anca {} katlı binada yumurta dayanıklılık 
 #5.
 bir sayının cift olup olmadığını hesaplayan en iyi fonksiyonu yazmaya calışın. (diyer katılımcılarla karşılaştırılacak)
 """
-
-print("Tek mi? Çift mi?")
 
 print("Tek mi? Çift mi?")
 
