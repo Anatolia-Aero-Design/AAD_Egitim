@@ -236,14 +236,17 @@ bir sayının cift olup olmadığını hesaplayan en iyi fonksiyonu yazmaya cal�
 
 print("Tek mi? Çift mi?")
 
+print("Tek mi? Çift mi?")
+
 def ciftmi(girdi):
     try:
-        if(int(girdi)%2==0):
+        int(girdi)
+        if(int(girdi[-1])%2==0):
             print("\n{} Çift Bir Sayı!\n".format(girdi))
         else:
             print("\n{} Tek Bir Sayı!\n".format(girdi))
     except:
-        print("Lütfen int bir değer giriniz!\n")
+        print("\nLütfen int bir değer giriniz!\n")
 
 while True:
     ciftmi(input("Öğrenmek İstediğiniz Sayıyı Giriniz: "))
