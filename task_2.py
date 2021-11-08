@@ -206,12 +206,6 @@ liste_random = []
 for r in range(1000):
     liste_random.append(random.randint(-5000,5000)) 
 
-liste_random = []
-liste_sirali = []
-
-for r in range(1000):
-    liste_random.append(random.randint(-5000,5000)) 
-
 for iter in range(len(liste_random)-1,0,-1):
     for index in range(iter):
          if liste_random[index]>liste_random[index+1]:
