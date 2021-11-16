@@ -124,58 +124,64 @@ else:
 
 # (Algoritma #8)
 
-esay1 = int(input("1. Sayı: "))
-ornek1 = esay1   # ana sayıyı değiştirmemek için
-esay2 = int(input("2.Sayı: "))
-ornek2 = esay2   # ana sayıyı değiştirmemek için
-ysl = 1
-bolen = 2
-
-while True:
-    if ornek1 == 1 and ornek2 == 1:
-        break
-    else:
-        if ornek1 % bolen == 0 and ornek2 % bolen == 0:
-            ornek1 /= bolen
-            ornek2 /= bolen
-            ysl *= bolen
-        elif ornek1 % bolen == 0:
-            ornek1 /= bolen
-        elif ornek2 % bolen == 0:
-            ornek2 /= bolen
+def EBOB(esay1,esay2):
+    ysl = 1
+    bolen = 2
+    ornek1 = esay1   # ana sayıyı değiştirmemek için
+    ornek2 = esay2   # ana sayıyı değiştirmemek için
+    while True:
+        if ornek1 == 1 and ornek2 == 1:
+            break
         else:
-            bolen += 1
+            if ornek1 % bolen == 0 and ornek2 % bolen == 0:
+                ornek1 /= bolen
+                ornek2 /= bolen
+                ysl *= bolen
+            elif ornek1 % bolen == 0:
+                ornek1 /= bolen
+            elif ornek2 % bolen == 0:
+                ornek2 /= bolen
+            else:
+                bolen += 1
+    return ysl
 
-print("EBOB: ", ysl)
+esay1 = int(input("1. Sayı: "))
+esay2 = int(input("2.Sayı: "))
+
+print("EBOB: ", EBOB(esay1,esay2))
+
 
 # (Algoritma #9)
 
+def EKOK(say1,say2):
+    orn = say1   #ana sayıyı değiştirmemek için
+    orn2 = say2   #ana sayıyı değiştirmemek için
+    ysl1=1
+    bolen =2
+
+    while (True):
+        if orn == 1 and orn2 == 1:
+            break
+        else:
+            if orn % bolen == 0 or orn2 % bolen == 0:
+                if orn % bolen == 0 and orn2 % bolen == 0: #Her iki sayıyıda bölüyorsa
+                    orn /= bolen
+                    orn2 /= bolen
+                    ysl1 *= bolen
+                elif orn % bolen == 0: # sadece 1. sayıyı bölüyorsa
+                    orn /= bolen
+                    ysl1 *= bolen
+                else: # sadece 2. sayıyı bölüyorsa
+                    orn2 /= bolen
+                    ysl1 *= bolen
+            else: # hiçbir sayıyı bölmüyorsa
+                bolen += 1
+    return ysl1
+
+
 say1 = int(input("1. Sayı: "))
-orn = say1   #ana sayıyı değiştirmemek için
 say2 = int(input("2.Sayı: "))
-orn2 = say2   #ana sayıyı değiştirmemek için
-ysl=1
-bolen =2
-
-while (True):
-    if orn == 1 and orn2 == 1:
-        break
-    else:
-        if orn % bolen == 0 or orn2 % bolen == 0:
-            if orn % bolen == 0 and orn2 % bolen == 0: #Her iki sayıyıda bölüyorsa
-                orn /= bolen
-                orn2 /= bolen
-                ysl *= bolen
-            elif orn % bolen == 0: # sadece 1. sayıyı bölüyorsa
-                orn /= bolen
-                ysl *= bolen
-            else: # sadece 2. sayıyı bölüyorsa
-                orn2 /= bolen
-                ysl *= bolen
-        else: # hiçbir sayıyı bölmüyorsa
-            bolen += 1
-
-print("EKOK: ", ysl)
+print("EKOK: ", EKOK(say1,say2))
 
 # (Algoritma #10)
 
