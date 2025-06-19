@@ -1,5 +1,8 @@
-# AAD_alım
-
+# AAD Eğitim
+- Repoyu çalışma ortamınıza clone'ladıktan sonra kendi adınıza bir branch açın ve kodlarınızı o branch'lere pushlayın.
+- Çalışmalarınıza açıklamaları kendiniz yazmış olduğunuz yorum satırları ekleyin ve anlaşılabilir olmasına özen gösterin.
+- 1. aşama ve 2. aşama için AI tool tam kapalı (kullanmak yasak)(google it). 3. aşamada kodu yazdırmamak kaydıyla destek alabilirsiniz.
+- Bir sorunuz olursa yetkili birim kaptanınıza ulaşınız.
 
 ## 1.Aşama: Python temelleri
 
@@ -8,10 +11,15 @@
 - Koşul ifadeleri
 - Döngüler
 - Fonksiyonlar
-- Hatalar ve Hata ayıklama
-- Moduller
 - Nesneye yönelik programlama
-- Mavlink-Maavproxy-Dronekit
-- Similasyon ortamının kurulması
-- Basit iha hareketleri
 
+## 2. Aşama: Algoritma Temelleri
+
+- Algoritma oluşturma
+- Sıralı işlemler
+
+## 3. Aşama: Fonksiyonel Uygulamalar
+- Görüntü işleme
+- Mavlink-Mavproxy-Dronekit
+- Simülasyon ortamının kurulması
+- Basit iha hareketleri
