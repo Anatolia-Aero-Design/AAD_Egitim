@@ -1,7 +1,7 @@
 # AAD Eğitim
 - Repoyu çalışma ortamınıza clone'ladıktan sonra kendi adınıza bir branch açın ve kodlarınızı o branch'lere pushlayın.
 - Çalışmalarınıza açıklamaları kendiniz yazmış olduğunuz yorum satırları ekleyin ve anlaşılabilir olmasına özen gösterin.
-- 1. aşama ve 2. aşama için AI tool tam kapalı (kullanmak yasak)(google it). 3. aşamada kodu yazdırmamak kaydıyla destek alabilirsiniz.
+- Aşama 1 ve Aşama 2 için AI tool tam kapalı (kullanmak yasak)(google it). 3. aşamada kodu yazdırmamak kaydıyla destek alabilirsiniz.
 - Bir sorunuz olursa yetkili birim kaptanınıza ulaşınız.
 
 ## 1.Aşama: Python temelleri
