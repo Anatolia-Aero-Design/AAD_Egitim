@@ -1,3 +1,6 @@
+# Not: Bu kısımda tam kapsamlı bir ros kurulumu yapmanız gerekmemektedir mavproxy ile de yapabilirsiniz
+# fakat tam kapsamlı kurulum yapmanız tercih edilir.
+
 """
 1)
 Kamera görüntüsü ile bir nesne tespiti yapın
@@ -27,11 +30,18 @@ kısımda yaptığınız şeylerin aynısını sabit kanat ile tekrar deneyin ve
 
 
 """
-Python temelleri kısmının final kısmı
-https://cdn.teknofest.org/media/upload/userFormUpload/Yay%C4%B1mlanan_V8_-_IHA_Yar%C4%B1smalar%C4%B1_Sartnamesi_2025_mceEG.pdf linkteki sabit kanat görev 1 ve görev 2'yi
-simülasyon ortamında gerçekleştirin
+4)
+https://cdn.teknofest.org/media/upload/userFormUpload/Yay%C4%B1mlanan_V8_-_IHA_Yar%C4%B1smalar%C4%B1_Sartnamesi_2025_mceEG.pdf 
+linkteki sabit kanat görev 1 ve görev 2'yi simülasyon ortamında gerçekleştirin
 
 *Direklerin konumlarını kendiniz belirleyin
 *Görev 2 için sadece bırakma mesajı çıkartmanız yeterli olacaktır. (bir test görüntüsü ile veya konumu bilinen bir nokta ile denemelerinizi gerçekleştirebilirsiniz)
 *Görev 1 ve görev 2 arasında yere inmeyip tek seferde bitirin. (görevlerden sonra başarı ile tamamlandığını gösteren bir mesaj verin)
+"""
+
+"""
+5) Basit bir PID kontrolcüsü kullanarak sabit kanat bir drone'u belirlediğiniz noktalara götürün. Bu noktalar sırasıyla:
+- İrtifa olarak dik bir dalış yapmak kaydıyla alçak bir irtifa seçilmelidir. (örneğin 10 metre)
+- Sert bir dönüş (roll ve yaw) yapacak şekilde belirlenmelidir.
+Her bir görevi ayrı ayrı veya bütünleşik bir şekilde gerçekleştirebilirsiniz.
 """

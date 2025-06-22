@@ -20,6 +20,6 @@
 
 ## 3. Aşama: Fonksiyonel Uygulamalar
 - Görüntü işleme
-- Mavlink-Mavproxy-Dronekit
+- Mavlink-Mavproxy-ROS2
 - Simülasyon ortamının kurulması
 - Basit iha hareketleri
