@@ -9,8 +9,53 @@ Bir karıştırma (shuffle) metodu bulunmalı. Bu metot, destede tüm 52 kartın
 Card (Kart) sınıfı ise şu iki özelliğe sahip olmalıdır:
     - Renk (suit): Hearts (Kupa), Diamonds (Karo), Clubs (Sinek), Spades (Maça)
     - Değer (value): A, 2, 3, 4, 5, 6, 7, 8, 9, 10, J, Q, K
-"""
+class Card:
+    Suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
+    Values = ['A', '2', '3','4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
+    
+    def __init__(self, suit, value):
+        self.suit = suit
+        self.value = value
+        
+    def __str__(self):
+        return(f"{self.value} of {self.suit}")
+    
+import random
+class Deck:
+    def __init__(self):
+        self.cards = [Card(suit, value) for suit in Card.Suits for value in Card.Values]
+        
+    def shuffle(self):
+        random.shuffle(self.cards)
+        
+    def deal(self, num_cards):
+        dealt_cards = self.cards[:num_cards]
+        self.cards = self.cards[num_cards:]
+        return dealt_cards
 
+deck = Deck()
+deck.shuffle()
+hand = deck.deal(5)
+for card in hand:
+    print(card)
+        
+"""
+    
+    
+ 
+
+
+        
+    
+        
+
+
+            
+            
+ 
+                
+        
+        
 """
 2)
 basit bir drone classı yaratın her dronun sahip olması gerek standart özellikler:
@@ -32,6 +77,37 @@ bir drone değil xyz'si bu birimlere eşitlenmesini istiyorum),
 *yük bırak,
 *kalkış noktasına uzaklık,
 """
+
+class drone:
+    x = int(input("x:"))
+    y = int(input("y:"))
+    z = int(input("z:"))
+    
+    
+    def __init__(self, id, x, y, z, velocity, charge, battery):
+        self.id = id
+        self.x = x
+        self.y = y
+        self.z = z
+        self.velocity = velocity
+        self.charge = charge 
+        self.battery = battery
+    
+
+    
+    def __init__(self):
+        self.x = 0
+        self.y = 0
+        self.z = 0
+        self.yer = True
+     
+    
+    def takeoff(self, height):
+        if self.yer:
+            self.y = height
+            self.yer = False
+            print("height:{self.y}")
+        
 
 
 """
