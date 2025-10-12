@@ -1,11 +1,20 @@
+import math
+
 # 1)Kullanıcıdan aldığınız 3 tane sayıyı çarparak ekrana yazdırın. Ekrana yazdırma işlemini format metoduyla yapmaya çalışın
-print("")
+n1, n2, n3 = input("3 sayı girin: ").split()
+print(f"3 sayinin çarpimi: {int(n1)*int(n2)*int(n3)}")
 
 # 2) Kullanıcıdan ad,soyad ve numara bilgisini alarak bunları alt alta ekrana yazdırın.
 
+ad, soyad, numara = input("Ad, Soyad, Numara ").split()
+print(f"{ad}\n{soyad}\n{numara}")
 
 # 3) Kullanıcıdan bir dik üçgenin dik olan iki kenarını(a,b) alın ve hipotenüs uzunluğunu bulmaya çalışın. Hipotenüs Formülü: a^2 + b^2 = c^2
 
+karsi = float(input("Karşi kenar: "))
+komsu = float(input("Karşi kenar: "))
+hipotenüs = math.sqrt(karsi**2 + komsu**2)
+print("Hipotenüs: ", hipotenüs)
 
 """
 4) Kullanıcıdan alınan boy ve kilo değerlerine göre beden kitle indeksini hesaplayın ve şu kurallara göre ekrana şu yazıları yazdırın.
@@ -18,6 +27,8 @@ print("")
 #BKİ 25 ile 30 arasındaysa --------> Fazla Kilolu
 
 #BKİ 30'un üstündeyse -------------> Obez"""
+
+bki_list
 
 
 """
