@@ -173,3 +173,10 @@ sayı = int(input("sayı girin:"))
 for i in range(sayı+1):
     if i % 2 == 0:
         print(i)
+        
+# Review
+"""
+Test 1deki deste oluşturma kısmı güzel yapılmış.
+Test 5de her iterasyonda print yapmak yerine sonuca göre tek seferde çıktı almak daha iyi olur. 
+(terminal overflow, stack overflow Araştır)
+"""
