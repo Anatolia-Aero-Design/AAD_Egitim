@@ -7,13 +7,13 @@ def get_input(text, input_type=str):
         if input_type == int:
             try:
                 return int(the_input)
-            except:pass
+            except:print("Sizden tam sayı istendi.")
         elif input_type == str and the_input.isalpha():
             return str(the_input)
         elif input_type == float:
             try:
                 return float(the_input)
-            except:pass
+            except:print("Sizden virgüllü sayı istendi.")
 
 # Kök alma fonk
 def sqrt(kök):
