@@ -51,7 +51,7 @@ def test_2():
 # 3) Kullanıcıdan bir dik üçgenin dik olan iki kenarını(a,b) alın ve hipotenüs uzunluğunu bulmaya çalışın. Hipotenüs Formülü: a^2 + b^2 = c^2
 
 def test_3():
-    kenar1 = get_input("Üçgenin ilk kenarı: ", int)
+    kenar1 = get_input("Üçgenin ilk kenarı: ", int) 
     kenar2 = get_input("Üçgenin diğer kenarı: ", int)
 
     print("Hipotenüs: ", sqrt(kenar1**2 + kenar2**2))
@@ -305,3 +305,16 @@ while True:
             break
         case _:
             print("Yanlış girdiniz.")
+            
+            
+# Review:
+"""
+Fonksiyonlar gayet iyi olmuş güzel kullanılmış.
+get_input fonksiyonu ile kullanıcıdan istenilen tipte veri alma işlemi başarılı ancak girilen veri istenilen tipte değilse kullanıcı uyarılabilir.
+Test 3 düzgün çalışıyor ama input float da olabilir. 
+Test 7 de mantık doğru hata yakalaması yapılabilir, input float da gelebilir (sayı almanız istenmiş sadece tam sayı değil)   
+For döngüsü kullandığın sayı arama algoritmaları doğru çalışıyor aşırı büyük sayılar için yavaş olabilen bir süreç. Bütün uzayı araştırmana gerek olmayabilir.
+Farklı algoritmalar araştırılabilir.
+Test 11'de bütün hayvanlar ses çıkartıyor polymorphism araştırabilirsin.
+Genel kapsamda iyi bir çalışma tebrik ederim.
+"""
