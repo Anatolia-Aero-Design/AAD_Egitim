@@ -15,32 +15,32 @@ Card (Kart) sınıfı ise şu iki özelliğe sahip olmalıdır:
     - Değer (value): A, 2, 3, 4, 5, 6, 7, 8, 9, 10, J, Q, K
 """
 
-#class Card:
-#    def __init__(self, suit, value):
-#        self.suit = suit
-#        self.value = value
-#
-#    def __str__(self):
-#        return self.suit + " " + self.value
-#
-#class Deck:
-#    def __init__(self):
-#        self.shuffle()
-#
-#    def shuffle(self):
-#        self.deck = []
-#        for suit in ["Hearts", "Diamonds", "Clubs", "Spades"]:
-#            for value in ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]:
-#                self.deck.append(Card(suit, value))
-#
-#        random.shuffle(self.deck)
-#
-#    def deal(self):
-#        print(f"{self.deck.pop()} karti verildi!")
-#
-#deck = Deck()
-#for i in range(10):
-#    deck.deal()  
+# class Card:
+#     def __init__(self, suit, value):
+#         self.suit = suit
+#         self.value = value
+# 
+#     def __str__(self):
+#         return self.suit + " " + self.value
+# 
+# class Deck:
+#     def __init__(self):
+#         self.shuffle()
+# 
+#     def shuffle(self):
+#         self.deck = []
+#         for suit in ["Hearts", "Diamonds", "Clubs", "Spades"]:
+#             for value in ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]:
+#                 self.deck.append(Card(suit, value))
+# 
+#         random.shuffle(self.deck)
+# 
+#     def deal(self):
+#         print(f"{self.deck.pop()} karti verildi!")
+# 
+# deck = Deck()
+# for i in range(10):
+#     deck.deal()  
 
 """
 2)
@@ -129,7 +129,7 @@ bir drone değil xyz'si bu birimlere eşitlenmesini istiyorum),
 #
 #    if not braked:
 #        new_list.append(i)
-    
+#   
 #print(new_list)
 #print(check_list(new_list))
 #print(len(new_list))
@@ -168,3 +168,13 @@ bir sayının çift olup olmadığını hesaplayan en iyi fonksiyonu yazmaya cal
 #
 #except:
 #    print(f"{csayi} bir sayı değil...")
+
+
+# Review
+"""
+Test 2 de drone un id sini time ile vermek yerine her instance oluşturulduğunda artan bir sayı yapabilirsin. 
+(zaman bazlı id hoş bir kullanım ama bu senaryoda gerekli değil)
+Ayrıca bir instance oluşturup metodları çağırarak örnek kullanım gösterebilirsin.
+Test 4 de algoritma tam anlamıyla doğru değil. Tekrar gözden geçir
+Test 5 de float sayı da girilebilir. Bunu da kontrol edebilirsin.
+"""

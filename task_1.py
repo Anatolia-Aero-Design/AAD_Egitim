@@ -2,7 +2,7 @@ import math
 
 # 1)Kullanıcıdan aldığınız 3 tane sayıyı çarparak ekrana yazdırın. Ekrana yazdırma işlemini format metoduyla yapmaya çalışın
 
-#n1, n2, n3 = input("3 sayı girin: ").split(),
+#n1, n2, n3 = input("3 sayı girin: ").split()
 #print(f"3 sayinin çarpimi: {int(n1)*int(n2)*int(n3)}")
 
 # 2) Kullanıcıdan ad,soyad ve numara bilgisini alarak bunları alt alta ekrana yazdırın.
@@ -227,3 +227,15 @@ class At(Hayvan):
 
     def run(self):
         print(f"{self.name} {self.speed}m/s hızıyla tozu dumana katıyor!")
+
+# Review
+"""
+Test 1'de sayıları boşluklu yazması gerektiğini kullanıcıya belirtmen iyi olur. ya da direkt döngü kullanabilirsin.
+Aynısı test 2 için de geçerli. (döngü gerekli olmayabilir)
+Test 3 de dict kullanımı güzel olmuş ancak kullanıcı zayıf ise tüm aralıklar çıktı olarak veriliyor.
+Test 5 de kullanıcı notu 95 üstündeyse AA yazmıyor. Aralık kontrolü hatalı.
+Test 7 mantık olarak doğru ama her sayı girildiğinde mevcut sayıyı gösteriyor. Bunu kaldırabilirsin.
+Test 8 de kullanıcı float girdisi de yapabilir. Bunu da kontrol edebilirsin.
+Test 10 da ekrana ebob fonksiyonu yazıyor
+Test 11 de sınıflara instance oluşturup metodları çağırarak örnek kullanım gösterebilirsin.
+"""
