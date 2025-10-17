@@ -312,6 +312,7 @@ while True:
 Fonksiyonlar gayet iyi olmuş güzel kullanılmış.
 get_input fonksiyonu ile kullanıcıdan istenilen tipte veri alma işlemi başarılı ancak girilen veri istenilen tipte değilse kullanıcı uyarılabilir.
 Test 3 düzgün çalışıyor ama input float da olabilir. 
+Test 6 da çarpımlar doğru ama sıralı sonuçlar yerine tablo çıktısı isteniyor.
 Test 7 de mantık doğru hata yakalaması yapılabilir, input float da gelebilir (sayı almanız istenmiş sadece tam sayı değil)   
 For döngüsü kullandığın sayı arama algoritmaları doğru çalışıyor aşırı büyük sayılar için yavaş olabilen bir süreç. Bütün uzayı araştırmana gerek olmayabilir.
 Farklı algoritmalar araştırılabilir.
