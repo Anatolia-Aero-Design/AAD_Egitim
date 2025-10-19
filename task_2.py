@@ -155,13 +155,14 @@ yumurtayı atmak için k adet deneme yapabilirsiniz ve yumurta herhangi bir katt
 n verilen k değerine göre en fazla kaç olabilir?
 """
 
-n = int(input("Gökdelen kat sayısı girin: "))
+n = int(input("Gökdelen kat sayısı: "))
+k = 0
+toplam = 0
+while(toplam < n):
+    k += 1
+    toplam += k
 
-üs = 0
-while(n >= pow(2,üs)):
-    üs += 1
-
-print(f"en fazla {üs} deneme hakkı ile bulunur")
+print(f"en fazla {k} denemede buluruz")
 
 """
 5)
@@ -180,11 +181,3 @@ bir sayının çift olup olmadığını hesaplayan en iyi fonksiyonu yazmaya cal
 #
 #except:
 #    print(f"{csayi} bir sayı değil...")
-
-
-# Review
-"""
-Test 4 de algoritma tam anlamıyla doğru değil. Tekrar gözden geçir
--   Erdeniz: Bir fazla vermesinden dolayı dediysen, 1. kat bile olsa kırılıp kırılmayacağını bilmiyoruz diye düşündüm. 
-    Bir kez deneriz dedim yoksa 0. kat deriz
-"""
