@@ -2,12 +2,18 @@ import math
 
 # 1)Kullanıcıdan aldığınız 3 tane sayıyı çarparak ekrana yazdırın. Ekrana yazdırma işlemini format metoduyla yapmaya çalışın
 
-#n1, n2, n3 = input("3 sayı girin: ").split()
-#print(f"3 sayinin çarpimi: {int(n1)*int(n2)*int(n3)}")
+#k = 3
+#sonuc = 1
+#
+#print(f"{k} adet sayı girin:")
+#for i in range(k):
+#    sonuc *= float(input(f"Sayı {i+1}: "))
+#
+#print(f"{k} sayinin çarpimi: {sonuc}")
 
 # 2) Kullanıcıdan ad,soyad ve numara bilgisini alarak bunları alt alta ekrana yazdırın.
 
-#ad, soyad, numara = input("Ad, Soyad, Numara ").split()
+#ad, soyad, numara = input("Ad, Soyad, Numara (Boşluklu): ").split()
 #print(f"{ad}\n{soyad}\n{numara}")
 
 # 3) Kullanıcıdan bir dik üçgenin dik olan iki kenarını(a,b) alın ve hipotenüs uzunluğunu bulmaya çalışın. Hipotenüs Formülü: a^2 + b^2 = c^2
@@ -43,6 +49,8 @@ import math
 #for i in bki_list.keys():
 #    if bki<i:
 #        print(f"Bki: {bki} | {bki_list[i]}")
+#        break
+
 
 """
 5) Kullanıcının girdiği vize1,vize2,final notlarına notlarına göre harf notunu hesaplayın.
@@ -83,7 +91,7 @@ Toplam Not <  55 -----> FF
 #    80: "CB",
 #    85: "BB",
 #    90: "BA",
-#    95: "AA"
+#    math.inf: "AA"
 #}
 #
 #vize1 = int(input("Vize1: "))
@@ -121,7 +129,6 @@ zaman döngüyü sonlandırın ve ekrana "toplam değişkenini" bastırın.
 
 #toplam = 0
 #while True:
-#    print(f"Mevcut sayı: {toplam}")
 #    command = input("Sayi girin (q çıkış): ")
 #    
 #    if command == "q":
@@ -136,9 +143,9 @@ Kullanıcıdan aldığınız bir sayının mükemmel olup olmadığını bulmaya
 Bir sayının kendi hariç bölenlerinin toplamı kendine eşitse bu sayıya "mükemmel sayı" denir. Örnek olarak, 6 mükemmel bir sayıdır. (1 + 2 + 3 = 6)
 """
 
-#sayi = int(input("Mükemmel bir sayı girin: "))
+#sayi = float(input("Mükemmel bir sayı girin: "))
 #bolenler_toplam = 0
-#for i in range(1,sayi):
+#for i in range(1,int(math.ceil(sayi))):
 #    if sayi % i == 0:
 #        bolenler_toplam += i
 #
@@ -178,10 +185,10 @@ Kullanıcıdan 2 tane sayı alarak bu sayıların en küçük ortak katlarını 
 #def EKOK(s1, s2):
 #    return s1*s2/EBOB(s1,s2)
 #
-#print("EBOB alma fonksiyonu")
+#print("EKOK alma fonksiyonu")
 #ekok1 = int(input("Sayı 1: "))
 #ekok2 = int(input("Sayı 2: "))
-#print(f"İki sayının ekoku: {EBOB(ekok1, ekok2)}")
+#print(f"İki sayının ekoku: {EKOK(ekok1, ekok2)}")
 
 """
 11)
@@ -217,6 +224,9 @@ class Kus(Hayvan):
         super().__init__(name)
         self.color = color
 
+    def __str__(self):
+        return f"{self.color} renkli {self.name}"
+
     def fly(self):
         print(f"{self.name} güzel {self.color} tüyleriyle gökyüzünü süslüyor!")
 
@@ -228,14 +238,12 @@ class At(Hayvan):
     def run(self):
         print(f"{self.name} {self.speed}m/s hızıyla tozu dumana katıyor!")
 
-# Review
-"""
-Test 1'de sayıları boşluklu yazması gerektiğini kullanıcıya belirtmen iyi olur. ya da direkt döngü kullanabilirsin.
-Aynısı test 2 için de geçerli. (döngü gerekli olmayabilir)
-Test 3 de dict kullanımı güzel olmuş ancak kullanıcı zayıf ise tüm aralıklar çıktı olarak veriliyor.
-Test 5 de kullanıcı notu 95 üstündeyse AA yazmıyor. Aralık kontrolü hatalı.
-Test 7 mantık olarak doğru ama her sayı girildiğinde mevcut sayıyı gösteriyor. Bunu kaldırabilirsin.
-Test 8 de kullanıcı float girdisi de yapabilir. Bunu da kontrol edebilirsin.
-Test 10 da ekrana ebob fonksiyonu yazıyor
-Test 11 de sınıflara instance oluşturup metodları çağırarak örnek kullanım gösterebilirsin.
-"""
+
+hayvan = Hayvan("hayvan")
+karabas = Kopek("Karabaş", 50)
+boncuk = Kus("Boncuk", "Pennsylvania Üniversitesi kırmızısı")
+boxer = At("Boxer", 9999999999999999999999999999999999999999)
+
+karabas.sniff(boncuk)
+boncuk.fly()
+boxer.run()
