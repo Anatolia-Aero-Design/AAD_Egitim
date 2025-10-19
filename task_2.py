@@ -64,8 +64,11 @@ bir drone değil xyz'si bu birimlere eşitlenmesini istiyorum),
 *kalkış noktasına uzaklık,
 """
 
+#drone_count = 0
 #class Drone:
-#    def __init__(self, id = time.time(), coordinates = (0,0,0), load_capacity = 10):
+#    def __init__(self, id = drone_count+1, coordinates = (0,0,0), load_capacity = 10):
+#        drone_count += 1
+#        
 #        self.id = id
 #        self.x, self.y, self.z = coordinates
 #        self.takeoff_x, self.takeoff_y, self.takeoff_z = coordinates
@@ -94,6 +97,15 @@ bir drone değil xyz'si bu birimlere eşitlenmesini istiyorum),
 #
 #    def distance(self):
 #        print(f"Kalkışa uzaklık: {math.sqrt((self.takeoff_x-self.x)**2 + (self.takeoff_y-self.y)**2 + (self.takeoff_z-self.z)**2)}")
+#
+#
+#drone = Drone(coordinates=(3,0,17), load_capacity=50)
+#drone.takeoff(10)
+#drone.move(9,9,4)
+#drone.load_up(40)
+#drone.move(2,9,54)
+#drone.load_down()
+#drone.return_to_launch()
 
 """
 3)
@@ -143,13 +155,13 @@ yumurtayı atmak için k adet deneme yapabilirsiniz ve yumurta herhangi bir katt
 n verilen k değerine göre en fazla kaç olabilir?
 """
 
-#n = int(input("Gökdelen kat sayısı girin: "))
-#
-#üs = 0
-#while(n >= pow(2,üs)):
-#    üs += 1
-#
-#print(f"en fazla {üs} deneme hakkı ile bulunur")
+n = int(input("Gökdelen kat sayısı girin: "))
+
+üs = 0
+while(n >= pow(2,üs)):
+    üs += 1
+
+print(f"en fazla {üs} deneme hakkı ile bulunur")
 
 """
 5)
@@ -160,7 +172,7 @@ bir sayının çift olup olmadığını hesaplayan en iyi fonksiyonu yazmaya cal
 #csayi = input("Çift sayı girin: ")
 #
 #try:
-#    csayi = int(csayi)
+#    csayi = float(csayi)
 #    if csayi % 2 == 0:
 #        print(f"{csayi} bir çift sayı!")
 #    else:
@@ -172,9 +184,7 @@ bir sayının çift olup olmadığını hesaplayan en iyi fonksiyonu yazmaya cal
 
 # Review
 """
-Test 2 de drone un id sini time ile vermek yerine her instance oluşturulduğunda artan bir sayı yapabilirsin. 
-(zaman bazlı id hoş bir kullanım ama bu senaryoda gerekli değil)
-Ayrıca bir instance oluşturup metodları çağırarak örnek kullanım gösterebilirsin.
 Test 4 de algoritma tam anlamıyla doğru değil. Tekrar gözden geçir
-Test 5 de float sayı da girilebilir. Bunu da kontrol edebilirsin.
+-   Erdeniz: Bir fazla vermesinden dolayı dediysen, 1. kat bile olsa kırılıp kırılmayacağını bilmiyoruz diye düşündüm. 
+    Bir kez deneriz dedim yoksa 0. kat deriz
 """
