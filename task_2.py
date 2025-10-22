@@ -15,32 +15,32 @@ Card (Kart) sınıfı ise şu iki özelliğe sahip olmalıdır:
     - Değer (value): A, 2, 3, 4, 5, 6, 7, 8, 9, 10, J, Q, K
 """
 
-# class Card:
-#     def __init__(self, suit, value):
-#         self.suit = suit
-#         self.value = value
-# 
-#     def __str__(self):
-#         return self.suit + " " + self.value
-# 
-# class Deck:
-#     def __init__(self):
-#         self.shuffle()
-# 
-#     def shuffle(self):
-#         self.deck = []
-#         for suit in ["Hearts", "Diamonds", "Clubs", "Spades"]:
-#             for value in ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]:
-#                 self.deck.append(Card(suit, value))
-# 
-#         random.shuffle(self.deck)
-# 
-#     def deal(self):
-#         print(f"{self.deck.pop()} karti verildi!")
-# 
-# deck = Deck()
-# for i in range(10):
-#     deck.deal()  
+class Card:
+    def __init__(self, suit, value):
+        self.suit = suit
+        self.value = value
+
+    def __str__(self):
+        return self.suit + " " + self.value
+
+class Deck:
+    def __init__(self):
+        self.shuffle()
+
+    def shuffle(self):
+        self.deck = []
+        for suit in ["Hearts", "Diamonds", "Clubs", "Spades"]:
+            for value in ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]:
+                self.deck.append(Card(suit, value))
+
+        random.shuffle(self.deck)
+
+    def deal(self):
+        print(f"{self.deck.pop()} karti verildi!")
+
+deck = Deck()
+for i in range(10):
+    deck.deal()  
 
 """
 2)
