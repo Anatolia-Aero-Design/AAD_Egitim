@@ -18,6 +18,8 @@ Bu görüntüdeki nesneyi renk, şekil ve boyut gibi özelliklere göre ayirt ed
 # Açikçasi çoğu şeyleri chatgptden aldim ama anlayarak yapmaya çalişiyorum. 
 # Hepsi ni kopyala yapiştir yerine parça parça ilerliyorum ve kendim yaziyorum (bazi arrayleri kopyaladim uğraşmamak için)
 # Anlayip anlamadiğimi test etmek için yorum satirlari ekledim
+
+# KULLANMAK İÇİN: Terminal yoluyla kamera görüntüsünü /image_raw a yolla
 class RedFinder(Node):
     def __init__(self):
         # Node açiyoruz
