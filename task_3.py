@@ -20,101 +20,224 @@ Bu görüntüdeki nesneyi renk, şekil ve boyut gibi özelliklere göre ayirt ed
 # Anlayip anlamadiğimi test etmek için yorum satirlari ekledim
 
 # KULLANMAK İÇİN: Terminal yoluyla kamera görüntüsünü /image_raw a yolla
-class RedFinder(Node):
-    def __init__(self):
-        # Node açiyoruz
-        super().__init__("object_detection_node")
-
-        # Kamera nodeu topice görüntü göndericek, biz de bu topici atiyoruz
-        self.subscription = self.create_subscription(
-            Image, # Bu çeşit olmasi gereken şeyi
-            '/image_raw', # Bu topicten al
-            self.image_callback, # Buraya gönder
-            10 # Okuduklarin birikirse en fazla bu kadar biriktir
-        )
-
-        # Ros2 byte halinde gönderiyor, onlari Cv de kullanabileceğimiz numpy arraye çevirmeye yariyor
-        self.bridge = CvBridge()
-
-        # Konsola bilgilendirme gönderiyoruz
-        self.get_logger().info("Object detection started")
-
-    def image_callback(self, msg): # Gelen resmi işleme yeri
-        # resmi byte dan numpy yapiyoruz
-        frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-
-        # hsv filtrelemede daha iyiymiş
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-        # Şimdi belirli renk araliklari seçicez.
-        # Bu renk araliklarinda olan pixelleri beyaz, gerisini siyah yapicaz
-        # bu beyaz siyah image e mask ismi veriyoruz
-
-        # kirmizi renk hsv de iki araliğa yayiliyormuş o yüzden iki maske
-        lower_red1 = np.array([0, 120, 70]) # renk araliği 1 taban
-        upper_red1 = np.array([10, 255, 255]) # renk araliği 1 tavan
-        lower_red2 = np.array([170, 120, 70]) # renk araliği 2 taban
-        upper_red2 = np.array([180, 255, 255]) # renk araliği 2 tavan
-
-        # maske görüntüleri oluşturuyoruz
-        mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
-        mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
-
-        # Birleştirip tek maske yapiyoruz.
-        mask = mask1 + mask2
-
-        # contour yani diş hat yani çerçeve buluyoruz. contourlar ve pixellerinin kordinatlari
-        # (iki değer döndürcek ikinciyi kullanmiyoruz. İkincisi hierarşiymiş mesela iki yuvarlak iç içeyse hangisi içte
-        # hangisi dişta onu anliyormuşsun ama çok detayli bakmadim)
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        for cnt in contours:
-            # alan buluyoruz, alan fazla küçükse onu almiyoruz
-            area = cv2.contourArea(cnt)
-            if area > 500:
-                # Çevreleyen kareyi hesapla kordinat ver
-                x, y, w, h = cv2.boundingRect(cnt)
-                # (x,y) sol üst köşe
-                # (x+w(idth), y+h(eight)) sağ alt köşe 
-                # sondaki 2 kalinlik
-                cv2.rectangle(frame, (x,y), (x+w, y+h), (0,255,0), 2)
-                # sol üst köşenin 10 piksel üstüne 0.5 büyüklüğünde 2 klainliğinda yeşil yazi koy
-                cv2.putText(frame, "Kirmizi Cisim", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
-
-        # ekranda göster
-        cv2.imshow("Kirmizi bulucu", frame)
-        # bir milisaniye yenileme süresi
-        cv2.waitKey(1)
-
-# normalde altttaki kodlar main içinde olcak buglari önlemek için, if name yapiyoruz
-# burda birsürü kod var diye böyle yazdim
-
-# rclpy yi, ros py kütüphanesini başlat
-rclpy.init(args=None)
-node = RedFinder()
-# node un döngüsünü başlat, ctrl+c atilana kadar devam
-try:
-    rclpy.spin(node)
-except KeyboardInterrupt:
-    pass
-
-# node u, cv2 ekranlarini, rclpy yi kapat
-node.destroy_node()
-cv2.destroyAllWindows()
-rclpy.shutdown()
+#class RedFinder(Node):
+#    def __init__(self):
+#        # Node açiyoruz
+#        super().__init__("object_detection_node")
+#
+#        # Kamera nodeu topice görüntü göndericek, biz de bu topici atiyoruz
+#        self.subscription = self.create_subscription(
+#            Image, # Bu çeşit olmasi gereken şeyi
+#            '/image_raw', # Bu topicten al
+#            self.image_callback, # Buraya gönder
+#            10 # Okuduklarin birikirse en fazla bu kadar biriktir
+#        )
+#
+#        # Ros2 byte halinde gönderiyor, onlari Cv de kullanabileceğimiz numpy arraye çevirmeye yariyor
+#        self.bridge = CvBridge()
+#
+#        # Konsola bilgilendirme gönderiyoruz
+#        self.get_logger().info("Object detection started")
+#
+#    def image_callback(self, msg): # Gelen resmi işleme yeri
+#        # resmi byte dan numpy yapiyoruz
+#        frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+#
+#        # hsv filtrelemede daha iyiymiş
+#        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+#
+#        # Şimdi belirli renk araliklari seçicez.
+#        # Bu renk araliklarinda olan pixelleri beyaz, gerisini siyah yapicaz
+#        # bu beyaz siyah image e mask ismi veriyoruz
+#
+#        # kirmizi renk hsv de iki araliğa yayiliyormuş o yüzden iki maske
+#        lower_red1 = np.array([0, 120, 70]) # renk araliği 1 taban
+#        upper_red1 = np.array([10, 255, 255]) # renk araliği 1 tavan
+#        lower_red2 = np.array([170, 120, 70]) # renk araliği 2 taban
+#        upper_red2 = np.array([180, 255, 255]) # renk araliği 2 tavan
+#
+#        # maske görüntüleri oluşturuyoruz
+#        mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+#        mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+#
+#        # Birleştirip tek maske yapiyoruz.
+#        mask = mask1 + mask2
+#
+#        # contour yani diş hat yani çerçeve buluyoruz. contourlar ve pixellerinin kordinatlari
+#        # (iki değer döndürcek ikinciyi kullanmiyoruz. İkincisi hierarşiymiş mesela iki yuvarlak iç içeyse hangisi içte
+#        # hangisi dişta onu anliyormuşsun ama çok detayli bakmadim)
+#        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+#
+#        for cnt in contours:
+#            # alan buluyoruz, alan fazla küçükse onu almiyoruz
+#            area = cv2.contourArea(cnt)
+#            if area > 500:
+#                # Çevreleyen kareyi hesapla kordinat ver
+#                x, y, w, h = cv2.boundingRect(cnt)
+#                # (x,y) sol üst köşe
+#                # (x+w(idth), y+h(eight)) sağ alt köşe 
+#                # sondaki 2 kalinlik
+#                cv2.rectangle(frame, (x,y), (x+w, y+h), (0,255,0), 2)
+#                # sol üst köşenin 10 piksel üstüne 0.5 büyüklüğünde 2 klainliğinda yeşil yazi koy
+#                cv2.putText(frame, "Kirmizi Cisim", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
+#
+#        # ekranda göster
+#        cv2.imshow("Kirmizi bulucu", frame)
+#        # bir milisaniye yenileme süresi
+#        cv2.waitKey(1)
+#
+## normalde altttaki kodlar main içinde olcak buglari önlemek için, if name yapiyoruz
+## burda birsürü kod var diye böyle yazdim
+#
+## rclpy yi, ros py kütüphanesini başlat
+#rclpy.init(args=None)
+#node = RedFinder()
+## node un döngüsünü başlat, ctrl+c atilana kadar devam
+#try:
+#    rclpy.spin(node)
+#except KeyboardInterrupt:
+#    pass
+#
+## node u, cv2 ekranlarini, rclpy yi kapat
+#node.destroy_node()
+#cv2.destroyAllWindows()
+#rclpy.shutdown()
 
 """
 2)
 herhangi bir simülasyon ortaminda (gazebo yada mavproxy), 1 adet döner kanata
 
-1. pre-arm check
-2. takeoff
-3. simplegoto kullanarak verilen konuma gitme
-4. dronu vektorel olarak kontrol (ex: x yönüne 4 m/s ile t saniye ilerle.)
-5. return to home 
-6. land
+/ 1. pre-arm check
+/ 2. takeoff
+x 3. simplegoto kullanarak verilen konuma gitme
+x 4. dronu vektorel olarak kontrol (ex: x yönüne 4 m/s ile t saniye ilerle.)
+x 5. return to home 
+x 6. land
 Siralanan görevleri yaptirin bunlarin simülasyon ortaminda gercek drone gibi hareket etmeleri gerekmektedir. Gerekirse bana ulaşin veya dökümantasyonlari inceleyin.
 """
+
+#!/usr/bin/env python3
+import rclpy
+from rclpy.node import Node
+from mavros_msgs.srv import CommandBool, SetMode, CommandTOL
+from mavros_msgs.msg import State
+from sensor_msgs.msg import BatteryState
+
+class TakeoffNode(Node):
+    def __init__(self):
+        super().__init__('takeoff_node')
+
+        # Info
+        self.system_status = -2 #https://mavlink.io/en/messages/common.html#MAV_STATE
+        self.voltage = -2
+        self.bat_percentage = -2
+
+        # Subscriptions
+        self.state_sub = self.create_subscription(State, "/mavros/state", self.state_callback, 10)
+        self.battery_sub = self.create_subscription(BatteryState, "/mavros/battery", self.battery_callback, 10)
+
+        # Clients
+        self.set_mode_client = self.create_client(SetMode, '/mavros/set_mode')
+        self.arm_client = self.create_client(CommandBool, '/mavros/cmd/arming')
+        self.takeoff_client = self.create_client(CommandTOL, '/mavros/cmd/takeoff')
+
+        # Wait for services
+        while not self.set_mode_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Waiting for set_mode service...')
+        while not self.arm_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Waiting for arming service...')
+        while not self.takeoff_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Waiting for takeoff service...')
+
+        self.set_guided()
+        self.arm_and_takeoff()
+
+        self.pre_arm_timer = self.create_timer(1, self.start)
+
+    def start(self):
+        if self.pre_arm():
+            self.set_guided()
+            self.arm_and_takeoff()
+            self.pre_arm_timer.destroy()
+
+    def state_callback(self, msg):
+        self.system_status = msg.system_status
+
+    def battery_callback(self, msg):
+        self.voltage = msg.voltage
+        self.bat_percentage = msg.percentage
+
+    def pre_arm(self):
+        if self.system_status not in (3,4):
+            self.get_logger().error(f'Bad system_status: {self.system_status}')
+            return False
+        
+        if self.voltage < 0:
+            self.get_logger().error(f'Voltage error: {self.voltage}')
+            return False
+        
+        if self.voltage < 5:
+            self.get_logger().error(f'Low voltage: {self.voltage}')
+            return False
+        
+        if self.bat_percentage < 13.8:
+            self.get_logger().error(f'Low battery percentage: {self.bat_percentage}')
+            return False
+        
+        self.get_logger().info('Pre arm good')
+        return True
+
+
+    def set_guided(self):
+        # Set mode to GUIDED
+        mode_req = SetMode.Request()
+        mode_req.custom_mode = 'GUIDED'
+        mode_future = self.set_mode_client.call_async(mode_req)
+        rclpy.spin_until_future_complete(self, mode_future)
+        if mode_future.result().mode_sent:
+            self.get_logger().info('GUIDED mode set successfully')
+        else:
+            self.get_logger().error('Failed to set GUIDED mode')
+            return
+        
+    def arm_and_takeoff(self):
+
+        # Arm the drone
+        arm_req = CommandBool.Request()
+        arm_req.value = True
+        arm_future = self.arm_client.call_async(arm_req)
+        rclpy.spin_until_future_complete(self, arm_future)
+        if arm_future.result().success:
+            self.get_logger().info('Drone armed successfully')
+        else:
+            self.get_logger().error('Failed to arm drone')
+            return
+
+        # Takeoff
+        takeoff_req = CommandTOL.Request()
+        takeoff_req.altitude = 5.0  # meters
+        takeoff_req.min_pitch = 0.0
+        takeoff_req.yaw = 0.0
+        takeoff_future = self.takeoff_client.call_async(takeoff_req)
+        rclpy.spin_until_future_complete(self, takeoff_future)
+        if takeoff_future.result().success:
+            self.get_logger().info('Takeoff initiated successfully')
+        else:
+            self.get_logger().error('Takeoff failed')
+
+    def move(self, x, y, z):
+        pass
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = TakeoffNode()
+    rclpy.spin(node)
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+
 
 
 """
