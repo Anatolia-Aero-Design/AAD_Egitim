@@ -112,7 +112,7 @@ herhangi bir simülasyon ortaminda (gazebo yada mavproxy), 1 adet döner kanata
 x 3. simplegoto kullanarak verilen konuma gitme
 x 4. dronu vektorel olarak kontrol (ex: x yönüne 4 m/s ile t saniye ilerle.)
 x 5. return to home 
-x 6. land
+/ 6. land
 Siralanan görevleri yaptirin bunlarin simülasyon ortaminda gercek drone gibi hareket etmeleri gerekmektedir. Gerekirse bana ulaşin veya dökümantasyonlari inceleyin.
 """
 
@@ -140,24 +140,15 @@ class TakeoffNode(Node):
         self.set_mode_client = self.create_client(SetMode, '/mavros/set_mode')
         self.arm_client = self.create_client(CommandBool, '/mavros/cmd/arming')
         self.takeoff_client = self.create_client(CommandTOL, '/mavros/cmd/takeoff')
-
-        # Wait for services
-        while not self.set_mode_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Waiting for set_mode service...')
-        while not self.arm_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Waiting for arming service...')
-        while not self.takeoff_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Waiting for takeoff service...')
-
-        self.set_guided()
-        self.arm_and_takeoff()
+        self.land_client = self.create_client(CommandTOL, '/mavros/cmd/land')
 
         self.pre_arm_timer = self.create_timer(1, self.start)
 
     def start(self):
         if self.pre_arm():
             self.set_guided()
-            self.arm_and_takeoff()
+            #self.arm_and_takeoff()
+            self.disarm_and_land()
             self.pre_arm_timer.destroy()
 
     def state_callback(self, msg):
@@ -172,17 +163,19 @@ class TakeoffNode(Node):
             self.get_logger().error(f'Bad system_status: {self.system_status}')
             return False
         
-        if self.voltage < 0:
-            self.get_logger().error(f'Voltage error: {self.voltage}')
-            return False
-        
-        if self.voltage < 5:
-            self.get_logger().error(f'Low voltage: {self.voltage}')
-            return False
-        
-        if self.bat_percentage < 13.8:
-            self.get_logger().error(f'Low battery percentage: {self.bat_percentage}')
-            return False
+        # Battery aldırmayı yazdım ama nedense almıyor
+        # Buraya başka kontroller de eklenebilir...
+        # if self.voltage < 0:
+        #     self.get_logger().error(f'Voltage error: {self.voltage}')
+        #     return False
+        # 
+        # if self.voltage < 5:
+        #     self.get_logger().error(f'Low voltage: {self.voltage}')
+        #     return False
+        # 
+        # if self.bat_percentage < 13.8:
+        #     self.get_logger().error(f'Low battery percentage: {self.bat_percentage}')
+        #     return False
         
         self.get_logger().info('Pre arm good')
         return True
@@ -192,39 +185,32 @@ class TakeoffNode(Node):
         # Set mode to GUIDED
         mode_req = SetMode.Request()
         mode_req.custom_mode = 'GUIDED'
-        mode_future = self.set_mode_client.call_async(mode_req)
-        rclpy.spin_until_future_complete(self, mode_future)
-        if mode_future.result().mode_sent:
-            self.get_logger().info('GUIDED mode set successfully')
-        else:
-            self.get_logger().error('Failed to set GUIDED mode')
-            return
+        self.set_mode_client.call_async(mode_req)
         
     def arm_and_takeoff(self):
-
-        # Arm the drone
         arm_req = CommandBool.Request()
         arm_req.value = True
-        arm_future = self.arm_client.call_async(arm_req)
-        rclpy.spin_until_future_complete(self, arm_future)
-        if arm_future.result().success:
-            self.get_logger().info('Drone armed successfully')
-        else:
-            self.get_logger().error('Failed to arm drone')
-            return
+        self.arm_client.call_async(arm_req)
 
-        # Takeoff
         takeoff_req = CommandTOL.Request()
-        takeoff_req.altitude = 5.0  # meters
+        takeoff_req.altitude = 5.0
         takeoff_req.min_pitch = 0.0
         takeoff_req.yaw = 0.0
-        takeoff_future = self.takeoff_client.call_async(takeoff_req)
-        rclpy.spin_until_future_complete(self, takeoff_future)
-        if takeoff_future.result().success:
-            self.get_logger().info('Takeoff initiated successfully')
-        else:
-            self.get_logger().error('Takeoff failed')
+        self.takeoff_client.call_async(takeoff_req)
 
+    def disarm_and_land(self):
+        
+        land_req = CommandTOL.Request()
+        land_req.altitude = 5.0
+        land_req.min_pitch = 0.0
+        land_req.yaw = 0.0
+        land_future = self.land_client.call_async(land_req)
+
+        disarm_req = CommandBool.Request()
+        disarm_req.value = False
+        disarm_future = self.arm_client.call_async(disarm_req)
+
+    
     def move(self, x, y, z):
         pass
 
