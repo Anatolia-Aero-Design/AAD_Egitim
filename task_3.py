@@ -116,8 +116,9 @@ herhangi bir simülasyon ortaminda (gazebo yada mavproxy), 1 adet döner kanata
 Siralanan görevleri yaptirin bunlarin simülasyon ortaminda gercek drone gibi hareket etmeleri gerekmektedir. Gerekirse bana ulaşin veya dökümantasyonlari inceleyin.
 """
 
-"""
+
 #!/usr/bin/env python3
+import subprocess
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
@@ -127,9 +128,6 @@ from sensor_msgs.msg import BatteryState
 from geographic_msgs.msg import GeoPoseStamped
 from geometry_msgs.msg import Vector3Stamped
 
-
-# TODO: mavros inside code
-# TODO: tek çalıştırma
 class TakeoffNode(Node):
     def __init__(self):
         super().__init__('takeoff_node')
@@ -316,6 +314,12 @@ class TakeoffNode(Node):
         pass
 
 def main(args=None):
+    subprocess.Popen([
+        'ros2', 'launch', 'mavros', 'apm.launch',
+        'fcu_url:=udp://:14550@14550'
+    ])
+
+
     rclpy.init(args=args)
     node = TakeoffNode()
     node.pre_arm()
@@ -335,7 +339,7 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-"""
+
 
 
 """
