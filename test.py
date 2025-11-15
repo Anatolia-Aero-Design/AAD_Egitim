@@ -187,24 +187,24 @@ class ArduPlaneMissionNode(Node):
 
         # --- Waypoint 1: Loiter Indefinitely ---
         # Loiters at the same altitude as takeoff, at the current location.
-        loiter_wp = Waypoint()
-        loiter_wp.frame = Waypoint.FRAME_GLOBAL_REL_ALT
-        loiter_wp.command = MAV_CMD_NAV_LOITER_UNLIM  # (17)
-        loiter_wp.is_current = False
-        loiter_wp.autocontinue = True
-        loiter_wp.param1 = 0.0   # Ignored (Time)
-        loiter_wp.param2 = 0.0   # Ignored (Radius)
-        loiter_wp.param3 = 0.0   # Ignored
-        loiter_wp.param4 = 0.0   # Ignored (Yaw)
-        loiter_wp.x_lat = 0.0    # Ignored (loiter at current location)
-        loiter_wp.y_long = 0.0   # Ignored (loiter at current location)
-        loiter_wp.z_alt = 40.0   # Target Altitude (meters)
+        nav_wp = Waypoint()
+        nav_wp.frame = Waypoint.FRAME_GLOBAL
+        nav_wp.command = 16  
+        nav_wp.is_current = False
+        nav_wp.autocontinue = True
+        nav_wp.param1 = 0.0   # Ignored (Time)
+        nav_wp.param2 = 0.0   # Ignored (Radius)
+        nav_wp.param3 = 0.0   # Ignored
+        nav_wp.param4 = 0.0   # Ignored (Yaw)
+        nav_wp.x_lat = 0.0    # Ignored (loiter at current location)
+        nav_wp.y_long = -30.0   # Ignored (loiter at current location)
+        nav_wp.z_alt = 40.0   # Target Altitude (meters)
 
         # Create a mission list and add the waypoints
         mission = WaypointList()
         mission.waypoints.append(takeoff_wp)
         mission.waypoints.append(takeoff_wp)
-        mission.waypoints.append(loiter_wp)
+        mission.waypoints.append(nav_wp)
 
         # Create and send the service request
         req = WaypointPush.Request()
