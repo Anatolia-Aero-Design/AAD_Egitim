@@ -116,6 +116,236 @@ herhangi bir simülasyon ortaminda (gazebo yada mavproxy), 1 adet döner kanata
 Siralanan görevleri yaptirin bunlarin simülasyon ortaminda gercek drone gibi hareket etmeleri gerekmektedir. Gerekirse bana ulaşin veya dökümantasyonlari inceleyin.
 """
 
+"""
+#!/usr/bin/env python3
+import subprocess
+import rclpy
+from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPolicy
+from mavros_msgs.srv import CommandBool, SetMode, CommandTOL, CommandHome
+from mavros_msgs.msg import State
+from sensor_msgs.msg import BatteryState
+from geographic_msgs.msg import GeoPoseStamped
+from geometry_msgs.msg import Vector3Stamped
+
+class TakeoffNode(Node):
+    def __init__(self):
+        super().__init__('takeoff_node')
+
+        # Info
+        self.system_status = -2
+        self.voltage = -2
+        self.bat_percentage = -2
+        self.football = GeoPoseStamped()
+        self.football.pose.position.latitude = 39.819077
+        self.football.pose.position.longitude = 30.530827
+        self.football.pose.position.altitude = 45.0
+        self.football.pose.orientation.z = 0.0
+        self.football.pose.orientation.w = 1.0
+
+        # QOS
+        # battery verisini alırken farklı iletişim metodu kullanıyormuş
+        qos_battery = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=DurabilityPolicy.VOLATILE,
+            history=HistoryPolicy.UNKNOWN,
+        )
+
+        # Subscriptions
+        self.state_sub = self.create_subscription(State, "/mavros/state", self.state_callback, 10)
+        # Normalde qos_battery ile beraber çalışması lazım, ancak araştırdığımdan anladığım kadarıyla bir bug? var
+        # Battery yi de kontrol etmişim say...
+        #self.battery_sub = self.create_subscription(BatteryState, "/mavros/battery", self.battery_callback, qos_battery)
+
+        # Clients
+        self.set_mode_client = self.create_client(SetMode, '/mavros/set_mode')
+        self.arm_client = self.create_client(CommandBool, '/mavros/cmd/arming')
+        self.takeoff_client = self.create_client(CommandTOL, '/mavros/cmd/takeoff')
+        self.set_home_client = self.create_client(CommandHome, '/mavros/cmd/set_home')
+        self.land_client = self.create_client(CommandTOL, '/mavros/cmd/land')
+
+        while not self.set_mode_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Waiting for set_mode service...')
+        while not self.arm_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Waiting for arm service...')
+        while not self.takeoff_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('Waiting for takeoff service...')
+
+        # Publishers
+        self.setpoint_position_global_publisher = self.create_publisher(GeoPoseStamped, '/mavros/setpoint_position/global', 10)
+        self.setpoint_position_local_publisher = self.create_publisher(GeoPoseStamped, '/mavros/setpoint_position/local', 10)
+        self.setpoint_accel_publisher = self.create_publisher(Vector3Stamped, '/mavros/setpoint_accel/accel', 10)
+
+        # Timers
+        #self.setpoint_position_global_timer = self.create_timer(0.2, self.setpoint_position_global)
+        #self.setpoint_position_local_timer = self.create_timer(0.2, self.setpoint_position_local)
+
+    def state_callback(self, msg):
+        self.system_status = msg.system_status
+
+    def battery_callback(self, msg):
+        self.voltage = msg.voltage
+        self.bat_percentage = msg.percentage
+
+    def pre_arm(self):
+        while self.system_status not in (3,4): #https://mavlink.io/en/messages/common.html#MAV_STATE
+            self.get_logger().error(f'Kötü system_status: {self.system_status}') 
+            rclpy.spin_once(self) 
+
+        # bir süre kötü system status spamlayıp sonra system status iyi 
+        # diyebilir ve bu biraz garip ama basit bir çözüm bulamadım
+        self.get_logger().info('System status iyi')
+
+        # Yukarda yorumlama sebebi açıklandı
+        # Buraya başka kontroller de eklenebilir...
+        #while self.voltage < 0:
+        #    self.get_logger().error(f'Voltage error: {self.voltage}')
+        #
+        #while self.voltage < 5:
+        #    self.get_logger().error(f'Low voltage: {self.voltage}')
+        #
+        #while self.bat_percentage < 13.8:
+        #    self.get_logger().error(f'Low battery percentage: {self.bat_percentage}')
+        
+        self.get_logger().info('Pre arm iyi')
+
+
+    def set_guided(self):
+        self.get_logger().info('GUIDED')
+        mode_req = SetMode.Request()
+        mode_req.custom_mode = 'GUIDED'
+        future = self.set_mode_client.call_async(mode_req)
+        while not future.done():
+            rclpy.spin_once(self)
+
+
+    def rtl(self):
+        self.get_logger().info('RTL')
+        mode_req = SetMode.Request()
+        mode_req.custom_mode = 'RTL'
+        future = self.set_mode_client.call_async(mode_req)
+        while not future.done():
+            rclpy.spin_once(self)
+
+        
+    def arm_and_takeoff(self):
+        self.get_logger().info('ARM')
+        arm_req = CommandBool.Request()
+        arm_req.value = True
+        future = self.arm_client.call_async(arm_req)
+        while not future.result():
+            rclpy.spin_once(self)
+
+        
+        # bazen bir miktar daha zaman isteyebiliyor
+        for _ in range(5):
+            rclpy.spin_once(self)
+
+        self.get_logger().info('TAKE OFF')
+        takeoff_req = CommandTOL.Request()
+        # Home'dan 5 metre yukarısı
+        takeoff_req.altitude = 5.0
+        takeoff_req.min_pitch = 0.0
+        takeoff_req.yaw = 0.0
+        takeoff_future = self.takeoff_client.call_async(takeoff_req)
+        while not takeoff_future.done():
+            rclpy.spin_once(self)
+
+        for _ in range(5):
+            rclpy.spin_once(self)
+
+    def set_home(self):
+        req = CommandHome.Request()
+
+        # Altitude a ros topic echo dan bakınca daha yüksek gösteriyor.
+        # Galiba zemin seviyesine ekliyor
+
+        req.latitude = self.football.pose.position.latitude
+        req.longitude = self.football.pose.position.longitude + 0.001
+        req.altitude = self.football.pose.position.altitude- 50
+        req.yaw = self.football.pose.orientation.z
+
+        future = self.set_home_client.call_async(req)
+        while not future.done():
+            rclpy.spin_once(self)
+        self.get_logger().info('SET HOME')
+
+    def go_football(self):
+        # Kordinat ile
+        self.get_logger().info('FOOTBALL')
+        for _ in range(500):
+            self.setpoint_position_global_publisher.publish(self.football)
+            rclpy.spin_once(self, timeout_sec=0.05)
+
+    def take_a_shoot(self):
+        # Vector ile hızlandırarak
+        self.get_logger().info('SHOOT')
+        shoot = Vector3Stamped()
+
+        shoot.vector.x = 0.0
+        shoot.vector.y = 50.0
+        shoot.vector.z = 0.0
+
+        for _ in range(200):
+            self.setpoint_accel_publisher.publish(shoot)
+            rclpy.spin_once(self, timeout_sec=0.05) # 200*0.05 = 10 saniye
+
+
+    def disarm_and_land(self):
+        
+        land_req = CommandTOL.Request()
+        land_req.altitude = 3.0
+        land_req.min_pitch = 0.0
+        land_req.yaw = 0.0
+        future = self.land_client.call_async(land_req)
+        while not future.done():
+            
+            rclpy.spin_once(self)
+
+        disarm_req = CommandBool.Request()
+        disarm_req.value = False
+        future = self.arm_client.call_async(disarm_req)
+        while not future.done():
+            
+            rclpy.spin_once(self)
+
+    
+    def move(self, x, y, z):
+        pass
+
+def main(args=None):
+    subprocess.Popen([
+        'ros2', 'launch', 'mavros', 'apm.launch',
+        'fcu_url:=udp://:14550@14550'
+    ])
+
+
+    rclpy.init(args=args)
+    node = TakeoffNode()
+    node.pre_arm()
+
+    #node.set_home() # Take off u bozar
+
+    node.set_guided()
+    node.arm_and_takeoff()
+    node.go_football()
+    node.take_a_shoot()
+    node.rtl()
+    #node.disarm_and_land()
+
+
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+"""
+
+"""
+3)
+kisimda yaptiğiniz şeylerin aynisini sabit kanat ile tekrar deneyin ve farklarina bakin (vektorel hareket kismi bir miktar farkli araştirma yapmaniz gerekmekte)
+----------------------------------------------------------------
+"""
 
 #!/usr/bin/env python3
 import subprocess
@@ -339,14 +569,6 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-
-
-
-"""
-3)
-kisimda yaptiğiniz şeylerin aynisini sabit kanat ile tekrar deneyin ve farklarina bakin (vektorel hareket kismi bir miktar farkli araştirma yapmaniz gerekmekte)
-----------------------------------------------------------------
-"""
 
 
 """
