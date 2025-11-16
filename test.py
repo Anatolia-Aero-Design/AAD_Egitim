@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
+import math
 import rclpy
 from rclpy.node import Node
 from rclpy.task import Future
 
-from mavros_msgs.msg import State, Waypoint, WaypointList
+from mavros_msgs.msg import State, Waypoint, WaypointList, WaypointReached
+from geometry_msgs.msg import Twist  # <-- VEKTÖR KONTROLÜ İÇİN EKLENDİ
 from mavros_msgs.srv import (
     CommandBool, 
     SetMode, 
@@ -12,18 +14,26 @@ from mavros_msgs.srv import (
 )
 
 # MAVLink command IDs
-MAV_CMD_NAV_TAKEOFF = 22
+MAV_CMD_NAV_WAYPOINT = 16
 MAV_CMD_NAV_LOITER_UNLIM = 17
+MAV_CMD_NAV_RETURN_TO_LAUNCH = 20
+MAV_CMD_NAV_LAND = 21
+MAV_CMD_NAV_TAKEOFF = 22
+MAV_CMD_DO_SET_MODE = 176
 
 class ArduPlaneMissionNode(Node):
 
     def __init__(self):
         super().__init__('arduplane_mission_controller')
-        self.get_logger().info('ArduPlane mission controller started')
+        self.get_logger().info('ArduPlane Görev ve Vektör Kontrolcüsü Başlatıldı')
 
         # --- Internal State ---
         self.current_state = State()
         self.connection_future = None
+        self.mode = None
+        self.is_guiding = False       # GUIDED modda olup olmadığımızı takip eden bayrak
+        self.control_timer = None     # Vektör kontrol döngüsü zamanlayıcısı
+        self.target_velocity = Twist()  # Gönderilecek hız vektörü
         
         # --- Mission Step Control ---
         self.mission_steps = []
@@ -35,189 +45,201 @@ class ArduPlaneMissionNode(Node):
         self.mission_clear_client = self.create_client(WaypointClear, '/mavros/mission/clear')
         self.mission_push_client = self.create_client(WaypointPush, '/mavros/mission/push')
 
+        # --- Yayıncılar (Publishers) ---
+        self.velocity_pub = self.create_publisher(
+            Twist,
+            '/mavros/setpoint_velocity/cmd_vel_unstamped',
+            10)
+
         # --- Subscriber ---
         self.state_sub = self.create_subscription(
             State,
             '/mavros/state',
             self.state_callback,
             10)
+        self.mission_sub = self.create_subscription(
+            WaypointReached,
+            '/mavros/mission/reached',
+            self.mission_callback,
+            10
+        )
 
         # Start the control logic
         self.start_mission_timer = self.create_timer(1.0, self.start_mission_flow)
 
     def state_callback(self, msg):
-        """Monitors the MAVLink connection state."""
+        """MAVLink durumunu izler ve mod geçişlerini yönetir."""
+        
+        # --- KRİTİK HATA DÜZELTMESİ ---
+        # self.current_state = msg, (sondaki virgül) bir tuple oluşturuyordu.
         self.current_state = msg
+        self.mode = msg.mode
+        # --- BİTTİ ---
+
         if self.connection_future and not self.connection_future.done():
+            # 'connected' özelliği State mesajının bir parçasıdır
             if self.current_state.connected:
                 self.get_logger().info('MAVLink connection established!')
                 self.connection_future.set_result(True)
 
+        # Ana mod değiştirme mantığı
+        if self.mode == 'GUIDED' and not self.is_guiding:
+            # GUIDED moda YENİ GİRDİK
+            self.is_guiding = True
+            self.get_logger().info("GUIDED mod algılandı! Vektör kontrolü başlıyor...")
+            self.start_vector_control()
+        elif self.mode != 'GUIDED' and self.is_guiding:
+            # GUIDED moddan YENİ ÇIKTIK (Güvenlik)
+            self.is_guiding = False
+            self.get_logger().warn("GUIDED moddan çıkıldı! Vektör kontrolü durduruluyor.")
+            self.stop_vector_control()
+
+    def mission_callback(self, msg):
+        if msg.wp_seq == 2:
+            self.run_step_set_mode("GUIDED", "SET MODE GUIDED") 
+
     def start_mission_flow(self):
-        """The main control logic flow, started by a timer."""
+        """Ana kontrol mantığı akışı, bir zamanlayıcı tarafından başlatılır."""
         self.start_mission_timer.cancel()
-        self.get_logger().info('--- Waiting for MAVLink connection ---')
+        self.get_logger().info('--- MAVLink bağlantısı bekleniyor ---')
         self.wait_for_connection()
 
     def wait_for_connection(self):
-        """Waits for a MAVLink connection before proceeding."""
+        """Devam etmeden önce bir MAVLink bağlantısı bekler."""
         self.connection_future = Future()
         
-        if self.current_state.connected:
+        # current_state'in henüz ayarlanmamış olma ihtimaline karşı kontrol
+        if self.current_state and self.current_state.connected:
             self.connection_future.set_result(True)
 
         self.connection_future.add_done_callback(self.on_connection)
 
     def on_connection(self, future):
-        """
-        Callback for connection future.
-        This is the main entry point for the mission sequence.
-        """
+        """Bağlantı 'future'ı için callback."""
         if not future.result():
-            self.get_logger().error('Failed to connect to MAVLink. Stopping.')
+            self.get_logger().error('MAVLink bağlantısı kurulamadı. Duruluyor.')
             return
 
-        self.get_logger().info('Connection is ready. Configuring mission sequence...')
+        self.get_logger().info('Bağlantı hazır. Görev dizisi yapılandırılıyor...')
 
         # --- 
-        # --- FLEXIBLE MISSION SEQUENCE ---
+        # --- GÖREV DEVRİ (HAND-OFF) DİZİSİ ---
         # ---
-        # To change the order of operations, just re-order the list below.
-        # Each tuple contains: (function_to_run, "STEP_NAME_FOR_LOGGING")
-        #
-        # This order matches your request: 1. Arm, 2. Clear, 3. Push, 4. Set Mode
-        #
         self.mission_steps = [
-            (self.run_step_push_mission, "PUSH_MISSION"),
-            (self.run_step_set_auto, "SET_MODE_AUTO"),
-            (self.run_step_arm, "ARM"),
+            lambda: self.run_step_clear_mission("CLEAR_MISSION"), # Önce temizle
+            lambda: self.run_step_push_mission("PUSH_MISSION"),  # Görevi (GUIDED'a geçiş dahil) yükle
+            lambda: self.run_step_set_mode('AUTO', "SET_MODE_AUTO"), # AUTO modu başlat
+            lambda: self.run_step_arm("ARM"),                    # Aracı arm et
         ]
         
-        # ---
-        # Example: Original order (Clear, Push, Mode, Arm)
-        # ---
-        # self.mission_steps = [
-        #     (self.run_step_clear_mission, "CLEAR_MISSION"),
-        #     (self.run_step_push_mission, "PUSH_MISSION"),
-        #     (self.run_step_set_auto, "SET_MODE_AUTO"),
-        #     (self.run_step_arm, "ARM")
-        # ]
-        # ---
-
         self.current_step_index = 0
         self.run_next_step()
 
     def run_next_step(self):
-        """Executes the next step in the mission sequence."""
+        """Görev dizisindeki bir sonraki adımı yürütür."""
         if self.current_step_index < len(self.mission_steps):
-            step_func, step_name = self.mission_steps[self.current_step_index]
-            self.get_logger().info(f"--- Executing Step {self.current_step_index + 1}/{len(self.mission_steps)}: {step_name} ---")
-            step_func() # Call the function (e.g., self.run_step_arm())
+            self.get_logger().info(f"--- Adım {self.current_step_index + 1}/{len(self.mission_steps)} yürütülüyor ---")
+            step_func = self.mission_steps[self.current_step_index]
+            step_func()
         else:
-            self.get_logger().info("--- Mission Sequence Complete ---")
-            # You could add logic here to shut down the node or perform other actions
-            # For this example, we'll just log that it's done.
+            self.get_logger().info("--- Görev Kurulumu Tamamlandı ---")
+            self.get_logger().info("Araç AUTO modda. GUIDED moda geçiş (görev devri) bekleniyor...")
+            # Kurulum bitti, şimdi state_callback'in devralmasını bekliyoruz.
 
     def on_step_complete(self, future, step_name):
-        """
-        Universal callback for all service calls.
-        Checks for success and triggers the next step.
-        """
+        """Tüm servis çağrıları için evrensel callback."""
         try:
             result = future.result()
-            
-            # Default success check
             success = False
 
-            # Check for success, which varies by service message type
             if hasattr(result, 'success'):
                 success = result.success
-                if not success:
-                    # Specific to CommandBool (arming)
-                    self.get_logger().warn(f"'{step_name}' failed with result code: {result.result}")
+                if not success and hasattr(result, 'result'):
+                    self.get_logger().warn(f"'{step_name}' başarısız oldu, sonuç kodu: {result.result}")
             elif hasattr(result, 'mode_sent'):
                 success = result.mode_sent
             elif hasattr(result, 'wp_transfered'):
-                success = result.success # WaypointPush has 'success' and 'wp_transfered'
+                success = result.success
                 if success:
-                    self.get_logger().info(f"Successfully transferred {result.wp_transfered} waypoints.")
+                    self.get_logger().info(f"Başarıyla {result.wp_transfered} yol noktası aktarıldı.")
 
             if success:
-                self.get_logger().info(f"Step '{step_name}' completed successfully.")
+                self.get_logger().info(f"Adım '{step_name}' başarıyla tamamlandı.")
                 self.current_step_index += 1
                 self.run_next_step()
             else:
-                self.get_logger().error(f"Step '{step_name}' failed (Result: {result}). Stopping sequence.")
+                self.get_logger().error(f"Adım '{step_name}' başarısız (Sonuç: {result}). Dizi durduruluyor.")
 
         except Exception as e:
-            self.get_logger().error(f"Step '{step_name}' failed with exception: {e}. Stopping sequence.")
+            self.get_logger().error(f"Adım '{step_name}' istisna ile başarısız oldu: {e}. Dizi durduruluyor.")
 
     # ---
-    # --- INDIVIDUAL STEP FUNCTIONS ---
+    # --- GÖREV ADIMI FONKSİYONLARI ---
     # ---
 
-    def run_step_clear_mission(self):
-        """Calls the /mavros/mission/clear service."""
+    def run_step_clear_mission(self, step_name):
+        """/mavros/mission/clear servisini çağırır."""
+        self.get_logger().info("Mevcut görev temizleniyor...")
         while not self.mission_clear_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Mission clear service not available, waiting...')
+            self.get_logger().info('Görev temizleme servisi bekleniyor...')
         
         req = WaypointClear.Request()
         future = self.mission_clear_client.call_async(req)
-        future.add_done_callback(lambda f: self.on_step_complete(f, "CLEAR_MISSION"))
+        future.add_done_callback(lambda f: self.on_step_complete(f, step_name))
 
-    def run_step_push_mission(self):
-        """Creates and pushes a mission with TAKEOFF and then LOITER."""
-        self.get_logger().info('Pushing mission: 1. TAKEOFF, 2. LOITER')
+    def run_step_push_mission(self, step_name):
+        """Kalkış, Navigasyon ve GUIDED'a geçiş görevini basar."""
+        self.get_logger().info('Görev basılıyor: 1. TAKEOFF, 2. NAV_WP, 3. SET_GUIDED')
         while not self.mission_push_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Mission push service not available, waiting...')
+            self.get_logger().info('Görev basma servisi bekleniyor...')
 
         # --- Waypoint 0: The Takeoff Command ---
         takeoff_wp = Waypoint()
         takeoff_wp.frame = Waypoint.FRAME_GLOBAL_REL_ALT
-        takeoff_wp.command = MAV_CMD_NAV_TAKEOFF  # (22)
-        takeoff_wp.is_current = True  # Make this the active command
+        takeoff_wp.command = MAV_CMD_NAV_TAKEOFF
+        takeoff_wp.is_current = True
         takeoff_wp.autocontinue = True
-        takeoff_wp.param1 = 15.0  # Takeoff pitch angle (degrees)
-        takeoff_wp.param2 = 0.0   # Empty
-        takeoff_wp.param3 = 0.0   # Empty
-        takeoff_wp.param4 = 0.0   # Empty (Yaw)
-        takeoff_wp.x_lat = 0.0    # Ignored for takeoff
-        takeoff_wp.y_long = 0.0   # Ignored for takeoff
-        takeoff_wp.z_alt = 40.0   # Target Altitude (meters)
+        takeoff_wp.param1 = 15.0 
+        takeoff_wp.z_alt = 40.0 
 
-        # --- Waypoint 1: Loiter Indefinitely ---
-        # Loiters at the same altitude as takeoff, at the current location.
+        # --- Waypoint 1: Navigation Waypoint ---
         nav_wp = Waypoint()
-        nav_wp.frame = Waypoint.FRAME_GLOBAL
-        nav_wp.command = 16  
+        nav_wp.frame = Waypoint.FRAME_GLOBAL_REL_ALT
+        nav_wp.command = MAV_CMD_NAV_WAYPOINT
         nav_wp.is_current = False
         nav_wp.autocontinue = True
-        nav_wp.param1 = 0.0   # Ignored (Time)
-        nav_wp.param2 = 0.0   # Ignored (Radius)
-        nav_wp.param3 = 0.0   # Ignored
-        nav_wp.param4 = 0.0   # Ignored (Yaw)
-        nav_wp.x_lat = 0.0    # Ignored (loiter at current location)
-        nav_wp.y_long = -30.0   # Ignored (loiter at current location)
-        nav_wp.z_alt = 40.0   # Target Altitude (meters)
+        nav_wp.x_lat = 39.819338
+        nav_wp.y_long = 30.530890
+        nav_wp.z_alt = 40.0  
 
-        # Create a mission list and add the waypoints
+        rtl_wp = Waypoint()
+        rtl_wp.frame = Waypoint.FRAME_GLOBAL_REL_ALT
+        rtl_wp.command = MAV_CMD_NAV_RETURN_TO_LAUNCH
+
+        land_wp = Waypoint()
+        land_wp.frame = Waypoint.FRAME_GLOBAL_REL_ALT
+        land_wp.command = MAV_CMD_NAV_LAND
+
+        # "İlkini atlama" hatasını düzeltmek için takeoff'u çiftle
         mission = WaypointList()
-        mission.waypoints.append(takeoff_wp)
-        mission.waypoints.append(takeoff_wp)
-        mission.waypoints.append(nav_wp)
+        mission.waypoints.append(takeoff_wp) # 0 (Yedek)
+        mission.waypoints.append(takeoff_wp) # 1
+        mission.waypoints.append(nav_wp)     # 2
+        #mission.waypoints.append(rtl_wp)     # 2
+        #mission.waypoints.append(land_wp)     # 2        
 
-        # Create and send the service request
         req = WaypointPush.Request()
         req.start_index = 0
         req.waypoints = mission.waypoints
         
         future = self.mission_push_client.call_async(req)
-        future.add_done_callback(lambda f: self.on_step_complete(f, "PUSH_MISSION"))
+        future.add_done_callback(lambda f: self.on_step_complete(f, step_name))
 
     def run_step_set_mode(self, mode_name, step_name):
-        """Generic function to request a mode change."""
+        """Mod değiştirme talebi için genel fonksiyon."""
+        self.get_logger().info(f"Mod {mode_name} olarak ayarlanıyor...")
         while not self.set_mode_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Set mode service not available, waiting...')
+            self.get_logger().info('Mod servisi bekleniyor...')
 
         req = SetMode.Request()
         req.custom_mode = mode_name
@@ -225,21 +247,59 @@ class ArduPlaneMissionNode(Node):
         future = self.set_mode_client.call_async(req)
         future.add_done_callback(lambda f: self.on_step_complete(f, step_name))
 
-    def run_step_set_auto(self):
-        """Helper function to set AUTO mode."""
-        self.run_step_set_mode('AUTO', "SET_MODE_AUTO")
-
-    def run_step_arm(self):
-        """Requests to arm the vehicle."""
-        self.get_logger().info('Arming vehicle...')
+    def run_step_arm(self, step_name):
+        """Aracı arm etme talebi gönderir."""
+        self.get_logger().info('Araç arm ediliyor...')
         while not self.arming_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Arming service not available, waiting...')
+            self.get_logger().info('Arm servisi bekleniyor...')
 
         req = CommandBool.Request()
         req.value = True
         
         future = self.arming_client.call_async(req)
-        future.add_done_callback(lambda f: self.on_step_complete(f, "ARM"))
+        future.add_done_callback(lambda f: self.on_step_complete(f, step_name))
+
+    # ---
+    # --- VEKTÖR KONTROL FONKSİYONLARI ---
+    # ---
+
+    def set_target_flight_vector(self):
+        """Uçağın takip edeceği hız vektörünü ayarlar."""
+        # linear.x: İLERİ HIZ (m/s). ASLA STALL HIZININ ALTINA DÜŞME!
+        self.target_velocity.linear.x = 10.0  # 20 m/s ileri hız
+
+        # linear.z: DİKEY HIZ (m/s). Pozitif = Tırman
+        self.target_velocity.linear.z = 0.0   # Düz uçuş
+
+        # angular.z: DÖNÜŞ HIZI (rad/s). Pozitif = Sola
+        self.target_velocity.angular.z = 0.0  # Hafif sola dönüş (daire çiz)
+
+    def start_vector_control(self):
+        """Vektör kontrol zamanlayıcısını başlatır."""
+        # Hedef vektörü ayarla (değiştirmek isterseniz burada yapın)
+        self.set_target_flight_vector()
+        
+        # Saniyede 5 kez (5Hz) çalışan kontrol döngüsünü başlat
+        if self.control_timer is None:
+            self.control_timer = self.create_timer(0.2, self.vector_control_loop)
+            self.get_logger().info("Vektör kontrol döngüsü (5Hz) başlatıldı.")
+
+    def stop_vector_control(self):
+        """Vektör kontrol zamanlayıcısını durdurur."""
+        if self.control_timer is not None:
+            self.control_timer.cancel()
+            self.control_timer = None
+            self.get_logger().info("Vektör kontrol döngüsü durduruldu.")
+
+    def vector_control_loop(self):
+        """
+        Sürekli çalışan ana kontrol döngüsü.
+        Sadece hedef hız vektörünü yayınlar.
+        """
+        # (İsteğe bağlı: Vektörü burada anlık olarak güncelleyebilirsiniz)
+        #self.target_velocity.linear.x += 0.1 * math.sin(self.get_clock().now().nanoseconds / 1e7)
+        print("test")
+        self.velocity_pub.publish(self.target_velocity)
 
 
 def main(args=None):
@@ -248,7 +308,7 @@ def main(args=None):
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        node.get_logger().info('Node shutting down.')
+        node.get_logger().info('Düğüm kapatılıyor.')
     finally:
         node.destroy_node()
         rclpy.shutdown()
