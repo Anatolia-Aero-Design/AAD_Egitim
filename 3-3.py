@@ -5,7 +5,7 @@ from rclpy.node import Node
 from rclpy.task import Future
 
 from mavros_msgs.msg import State, Waypoint, WaypointList, WaypointReached
-from geometry_msgs.msg import Twist  # <-- VEKTÖR KONTROLÜ İÇİN EKLENDİ
+from geometry_msgs.msg import Twist, TwistStamped
 from mavros_msgs.srv import (
     CommandBool, 
     SetMode, 
@@ -47,8 +47,8 @@ class ArduPlaneMissionNode(Node):
 
         # --- Yayıncılar (Publishers) ---
         self.velocity_pub = self.create_publisher(
-            Twist,
-            '/mavros/setpoint_velocity/cmd_vel_unstamped',
+            TwistStamped,
+            '/mavros/setpoint_attitude/cmd_vel',
             10)
 
         # --- Subscriber ---
@@ -126,10 +126,10 @@ class ArduPlaneMissionNode(Node):
         # --- GÖREV DEVRİ (HAND-OFF) DİZİSİ ---
         # ---
         self.mission_steps = [
+            lambda: self.run_step_arm("ARM"),                    # Aracı arm et
             lambda: self.run_step_clear_mission("CLEAR_MISSION"), # Önce temizle
             lambda: self.run_step_push_mission("PUSH_MISSION"),  # Görevi (GUIDED'a geçiş dahil) yükle
             lambda: self.run_step_set_mode('AUTO', "SET_MODE_AUTO"), # AUTO modu başlat
-            lambda: self.run_step_arm("ARM"),                    # Aracı arm et
         ]
         
         self.current_step_index = 0
@@ -274,6 +274,7 @@ class ArduPlaneMissionNode(Node):
         # angular.z: DÖNÜŞ HIZI (rad/s). Pozitif = Sola
         self.target_velocity.angular.z = 0.0  # Hafif sola dönüş (daire çiz)
 
+
     def start_vector_control(self):
         """Vektör kontrol zamanlayıcısını başlatır."""
         # Hedef vektörü ayarla (değiştirmek isterseniz burada yapın)
@@ -299,7 +300,9 @@ class ArduPlaneMissionNode(Node):
         # (İsteğe bağlı: Vektörü burada anlık olarak güncelleyebilirsiniz)
         #self.target_velocity.linear.x += 0.1 * math.sin(self.get_clock().now().nanoseconds / 1e7)
         print("test")
-        self.velocity_pub.publish(self.target_velocity)
+        msg = TwistStamped()
+        msg.twist = self.target_velocity
+        self.velocity_pub.publish(msg)
 
 
 def main(args=None):
