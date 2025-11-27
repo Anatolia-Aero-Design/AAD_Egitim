@@ -47,23 +47,25 @@ class ArduPlaneMissionNode(Node):
         self.mission_sub = self.create_subscription(WaypointReached, '/mavros/mission/reached', self.mission_callback, 10)
         self.pose_sub = self.create_subscription(PoseStamped, '/mavros/local_position/pose', self.pose_callback, qos_pose)
 
+        
         # --- Helper Objects ---
-        self.stepper = Stepper()
-        self.guider = Guider()
-        self.auto = Auto()
+        self.stepper = Stepper(self.get_logger(), )
+        self.guider = Guider(self.get_logger(), )
+        self.auto = Auto(self.get_logger(), self.clear_mission ,self.push_mission)
 
         # Start the control logic
         self.start_mission_timer = self.create_timer(1.0, self.start_mission_flow)
 
     # --- Mission Flow ---
-    
+    def start_mission_flow(self):
+        pass
 
     # --- Callbacks ---
     def state_callback(self, msg):
         self.state = msg
 
     def mission_callback(self, msg):
-        pass
+        self.auto.mission_callback(msg)
 
     def pose_callback(self, msg):
         self.pose = msg.pose
@@ -84,6 +86,30 @@ class ArduPlaneMissionNode(Node):
         req.value = bool_val
         
         return self.arming_client, req
+    
+    @service_caller
+    def clear_mission(self):
+        """Görev listesini temizler"""
+        req = WaypointClear.Request()
+        
+        return self.mission_clear_client, req
+    
+    @service_caller
+    def push_mission(self, mission):
+        """Görev listesini atar"""
+        req = WaypointPush.Request()
+        req.waypoints = mission
+
+        return self.mission_push_client, req
+        
+    
+    # --- Helper Communication ---
+    def on_mission_end(self):
+        pass
+
+    def step(self):
+        pass
+
 
 # --- Main ---
 def main(args=None):
