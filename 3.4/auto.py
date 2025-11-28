@@ -1,34 +1,57 @@
-MAV_CMD_NAV_WAYPOINT = 16
-MAV_CMD_NAV_LOITER_UNLIM = 17
-MAV_CMD_NAV_RETURN_TO_LAUNCH = 20
-MAV_CMD_NAV_LAND = 21
-MAV_CMD_NAV_TAKEOFF = 22
-MAV_CMD_DO_SET_MODE = 176
+from helper import Helper
 
+from mavros_msgs.msg import Waypoint, WaypointList
 
-class Auto:
-    def __init__(self, logger, clear_mission, push_mission):
-        self.logger = logger
+class Auto(Helper):
+    MAV_CMD_NAV_WAYPOINT = 16
+    MAV_CMD_NAV_LOITER_UNLIM = 17
+    MAV_CMD_NAV_RETURN_TO_LAUNCH = 20
+    MAV_CMD_NAV_LAND = 21
+    MAV_CMD_NAV_TAKEOFF = 22
+    MAV_CMD_DO_SET_MODE = 176
+
+    def __init__(self, get_logger, end_order, clear_mission, push_mission):
+        super().__init__(get_logger, end_order)
+
         self.clear_mission = clear_mission
         self.push_mission = push_mission
 
         self.mission_len = -1
         self.missions = {
-            "Takeoff": self.takeoff_mission  
+            "takeoff": self.takeoff_mission  
         }
 
     def execute(self, order, param=None):
         try:
             mission = self.missions[order](param)
-            self.mission_len = len(mission)
+            self.mission_len = len(mission.waypoints)
             self.push_mission(mission)
 
         except KeyError:
-            print("Auto, execute | Order doesnt exist...")
+            self.get_logger().error("Auto, execute | Order doesnt exist...")
 
     def mission_callback(self, msg):
-        if msg.wp_seq == self.mission_len:
-            self.on_mission_end()
+        if msg.wp_seq == self.mission_len-1:
+            self.finish_order()
+
+    # TODO: take param
+    def takeoff_mission(self, param):
+        takeoff_wp = Waypoint()
+        takeoff_wp.frame = Waypoint.FRAME_GLOBAL_REL_ALT
+        takeoff_wp.command = Auto.MAV_CMD_NAV_TAKEOFF
+        takeoff_wp.is_current = True
+        takeoff_wp.autocontinue = True
+        takeoff_wp.param1 = 15.0
+        takeoff_wp.z_alt = 40.0
+
+        mission = WaypointList()
+        mission.waypoints.append(takeoff_wp) # atlayabiliyor
+        mission.waypoints.append(takeoff_wp) # takeoff için
+        # TODO: RTL e geçtim mesajı varsa buna gerek kalmaz
+        mission.waypoints.append(takeoff_wp) # 2 ye geçtim mesajı için
+
+
+        return mission
      
 
 

@@ -18,8 +18,9 @@ def service_caller(func):
             self.get_logger().info(f'{client.srv_name} not available, waiting...')
 
         future = client.call_async(request)
+        self.get_logger().info("service called")
         
         # 4. Attach Callback
-        future.add_done_callback(lambda f: self.on_step_complete(f))
+        future.add_done_callback(lambda f: self.on_service_call(f))
         
     return wrapper

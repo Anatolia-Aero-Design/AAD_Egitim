@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
-import math
 import rclpy
 from rclpy.node import Node
-from rclpy.task import Future
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy
 
-from mavros_msgs.msg import State, Waypoint, WaypointList, WaypointReached, AttitudeTarget
+from mavros_msgs.msg import State, WaypointReached, AttitudeTarget
 from mavros_msgs.srv import CommandBool, SetMode, WaypointClear, WaypointPush
 from geometry_msgs.msg import Pose, PoseStamped
-from geographic_msgs.msg import GeoPoseStamped
 
-from .decorators import service_caller
-from .stepper import Stepper
-from .guider import Guider
-from .auto import Auto
+from decorators import service_caller
+from stepper import Stepper
+from guider import Guider
+from auto import Auto
 
 class ArduPlaneMissionNode(Node):
 
@@ -47,18 +44,27 @@ class ArduPlaneMissionNode(Node):
         self.mission_sub = self.create_subscription(WaypointReached, '/mavros/mission/reached', self.mission_callback, 10)
         self.pose_sub = self.create_subscription(PoseStamped, '/mavros/local_position/pose', self.pose_callback, qos_pose)
 
-        
         # --- Helper Objects ---
-        self.stepper = Stepper(self.get_logger(), )
-        self.guider = Guider(self.get_logger(), )
-        self.auto = Auto(self.get_logger(), self.clear_mission ,self.push_mission)
+        self.stepper = Stepper(self.get_logger, self.step)
+        self.auto = Auto(self.get_logger, self.step, self.clear_mission ,self.push_mission)
+        #self.guider = Guider(self.get_logger, self.step)
+
+        # --- Steps ---
+        self.stepper.assign_steps([
+            (lambda: self.arm(True), "Arm"),
+            (lambda: self.auto.execute("takeoff"), "Takeoff"),
+            (lambda: self.set_mode('AUTO'), "Auto")
+        ])
 
         # Start the control logic
-        self.start_mission_timer = self.create_timer(1.0, self.start_mission_flow)
+        self.timer = self.create_timer(1.0, self.start_mission_flow)
 
     # --- Mission Flow ---
     def start_mission_flow(self):
-        pass
+        self.stepper.start_mission_flow(self.timer)
+
+    def on_step_end(self):
+        self.stepper.step()
 
     # --- Callbacks ---
     def state_callback(self, msg):
@@ -98,17 +104,17 @@ class ArduPlaneMissionNode(Node):
     def push_mission(self, mission):
         """Görev listesini atar"""
         req = WaypointPush.Request()
-        req.waypoints = mission
+        req.waypoints = mission.waypoints
 
         return self.mission_push_client, req
         
     
     # --- Helper Communication ---
-    def on_mission_end(self):
-        pass
-
     def step(self):
-        pass
+        self.stepper.step()
+
+    def on_service_call(self, future):
+        self.stepper.step()
 
 
 # --- Main ---
